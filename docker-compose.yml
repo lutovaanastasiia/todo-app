@@ -1,0 +1,59 @@
+# Значения по умолчанию ниже — ТОЛЬКО для локальной разработки, это не production-секреты.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-todo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todo_local_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-todo}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-todo}:${POSTGRES_PASSWORD:-todo_local_dev_only}@db:5432/${POSTGRES_DB:-todo}?schema=public
+      PORT: 3001
+      FRONTEND_ORIGIN: http://localhost:3000
+      COOKIE_SECURE: "false"
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  # Отдельная PostgreSQL для тестов backend; запускается только с профилем test.
+  db-test:
+    image: postgres:17-alpine
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: todo_test
+      POSTGRES_PASSWORD: todo_test
+      POSTGRES_DB: todo_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todo_test -d todo_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
