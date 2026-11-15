@@ -1,26 +1,13 @@
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Не задана переменная окружения ${name}`);
-  }
-  return value;
-}
-
-function intFromEnv(name: string, fallback: number): number {
-  const raw = process.env[name];
-  if (!raw) return fallback;
-  const value = Number.parseInt(raw, 10);
-  return Number.isFinite(value) && value > 0 ? value : fallback;
+if (!process.env.DATABASE_URL) {
+  throw new Error("Не задана переменная окружения DATABASE_URL");
 }
 
 export const config = {
-  port: intFromEnv("PORT", 3001),
-  databaseUrl: required("DATABASE_URL"),
+  port: Number(process.env.PORT ?? 3001),
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
   cookieSecure: process.env.COOKIE_SECURE === "true",
-  sessionTtlMs: intFromEnv("SESSION_TTL_HOURS", 24 * 7) * 60 * 60 * 1000,
-  authRateLimitMax: intFromEnv("AUTH_RATE_LIMIT_MAX", 20),
-  authRateLimitWindowMs: intFromEnv("AUTH_RATE_LIMIT_WINDOW_MINUTES", 15) * 60 * 1000,
 };
 
 export const SESSION_COOKIE = "sid";
+export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 дней
+export const AUTH_RATE_LIMIT = { windowMs: 15 * 60 * 1000, limit: 20 }; // 20 попыток за 15 минут

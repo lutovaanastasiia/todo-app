@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { CookieOptions, RequestHandler, Response } from "express";
-import { config, SESSION_COOKIE } from "./config.js";
+import { config, SESSION_COOKIE, SESSION_TTL_MS } from "./config.js";
 import { prisma } from "./db.js";
 import { HttpError } from "./errors.js";
 
@@ -19,7 +19,7 @@ function cookieOptions(): CookieOptions {
 
 export async function createSession(res: Response, userId: string): Promise<void> {
   const token = randomBytes(32).toString("base64url");
-  const expiresAt = new Date(Date.now() + config.sessionTtlMs);
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
   await prisma.session.create({ data: { userId, tokenHash: hashToken(token), expiresAt } });
   res.cookie(SESSION_COOKIE, token, { ...cookieOptions(), expires: expiresAt });
 }

@@ -2,7 +2,7 @@ import argon2 from "argon2";
 import { Prisma } from "@prisma/client";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
-import { config, SESSION_COOKIE } from "../config.js";
+import { AUTH_RATE_LIMIT, SESSION_COOKIE } from "../config.js";
 import { prisma } from "../db.js";
 import { HttpError } from "../errors.js";
 import { credentialsSchema } from "../schemas.js";
@@ -11,14 +11,10 @@ import { clearSessionCookie, createSession, destroySession, requireAuth } from "
 const ARGON2_OPTIONS = { type: argon2.argon2id } as const;
 const INVALID_CREDENTIALS = "Неверный email или пароль";
 
-// Хеш для выравнивания времени ответа, когда пользователя не существует.
-const dummyHashPromise = argon2.hash("dummy-password-for-timing", ARGON2_OPTIONS);
-
 const authLimiter = rateLimit({
-  windowMs: config.authRateLimitWindowMs,
-  limit: config.authRateLimitMax,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
+  ...AUTH_RATE_LIMIT,
+  // В тестах лимит отключён: они делают десятки регистраций с одного IP.
+  skip: () => process.env.NODE_ENV === "test",
   handler: (_req, res) => {
     res.status(429).json({ error: "Слишком много попыток, попробуйте позже" });
   },
@@ -55,10 +51,7 @@ authRouter.post("/login", authLimiter, async (req, res) => {
   }
   const { email, password } = parsed.data;
   const user = await prisma.user.findUnique({ where: { email } });
-  const valid = user
-    ? await argon2.verify(user.passwordHash, password)
-    : (await argon2.verify(await dummyHashPromise, password), false);
-  if (!user || !valid) {
+  if (!user || !(await argon2.verify(user.passwordHash, password))) {
     throw new HttpError(401, INVALID_CREDENTIALS);
   }
   await createSession(res, user.id);

@@ -50,9 +50,6 @@ docker compose up --build
 | `PORT` | backend | порт backend, по умолчанию `3001` |
 | `FRONTEND_ORIGIN` | backend | разрешённый Origin для CORS и CSRF-проверки, по умолчанию `http://localhost:3000` |
 | `COOKIE_SECURE` | backend | `true`, если backend работает по HTTPS |
-| `SESSION_TTL_HOURS` | backend | срок жизни сессии в часах, по умолчанию `168` |
-| `AUTH_RATE_LIMIT_MAX` | backend | лимит попыток входа/регистрации за окно, по умолчанию `20` |
-| `AUTH_RATE_LIMIT_WINDOW_MINUTES` | backend | окно rate limit в минутах, по умолчанию `15` |
 | `TEST_DATABASE_URL` | тесты backend | отдельная тестовая БД (имя должно содержать `test`) |
 | `VITE_API_URL` | frontend | адрес backend, по умолчанию `http://localhost:3001` |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | docker compose | необязательная замена dev-значений БД |

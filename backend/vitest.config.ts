@@ -19,7 +19,6 @@ export default defineConfig({
       DATABASE_URL: testDatabaseUrl,
       FRONTEND_ORIGIN: "http://localhost:3000",
       COOKIE_SECURE: "false",
-      AUTH_RATE_LIMIT_MAX: "1000",
     },
   },
 });

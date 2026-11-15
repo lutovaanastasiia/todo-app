@@ -29,21 +29,13 @@ export const notFoundHandler: RequestHandler = (_req, res) => {
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.message, ...(err.fields ? { fields: err.fields } : {}) });
-    return;
-  }
-  if (err instanceof ZodError) {
+  } else if (err instanceof ZodError) {
     res.status(400).json({ error: "Некорректные данные", fields: fieldsFromZod(err) });
-    return;
-  }
-  // Ошибки body-parser: невалидный JSON, слишком большое тело и т.п.
-  if (err && typeof err === "object" && "type" in err && typeof err.type === "string" && err.type.startsWith("entity.")) {
+  } else if (err?.status >= 400 && err?.status < 500) {
+    // Ошибки express.json: невалидный JSON, слишком большое тело.
     res.status(400).json({ error: "Некорректное тело запроса" });
-    return;
+  } else {
+    console.error("Необработанная ошибка:", err instanceof Error ? err.message : err);
+    res.status(500).json({ error: "Внутренняя ошибка сервера" });
   }
-  if (err && typeof err === "object" && "type" in err && err.type === "encoding.unsupported") {
-    res.status(400).json({ error: "Некорректное тело запроса" });
-    return;
-  }
-  console.error("Необработанная ошибка:", err instanceof Error ? `${err.name}: ${err.message}` : err);
-  res.status(500).json({ error: "Внутренняя ошибка сервера" });
 };
